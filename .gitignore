@@ -1,0 +1,10 @@
+inst/doc
+.Rproj.user
+.RData
+.Rhistory
+.Ruserdata
+.Rprofile
+__pycache__
+input
+output
+esa
