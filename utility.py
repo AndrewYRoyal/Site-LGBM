@@ -41,13 +41,17 @@ def feature_predict(model, dat, train_dat, log_dep, estimator):
         dat[key_cols],
         pd.DataFrame(predict_array, columns=['ws'])],
         axis=1)
+    if (estimator == 'LGBMClassifier'):
+        prob_array = main_model.predict_proba(dat.drop(columns=key_cols))
+        classes = list(main_model.classes_)
+        prob_dat = pd.DataFrame(prob_array, columns=classes)
+        pred_dat = pd.concat([pred_dat, prob_dat], axis=1)
     # Calc OOS predictions + error
     train_a, train_b = train_test_split(train_dat, test_size=0.5)
     train_a, train_b = [train_a.reset_index(), train_b.reset_index()]
     split_model = getattr(lightgbm, estimator)(**model.best_params_). \
         fit(y=train_a['value'], X=train_a.drop(columns=key_cols))
     predict_array_b = split_model.predict(train_b.drop(columns=key_cols))
-    #split_model = lgb.LGBMRegressor(**model.best_params_). \
     split_model = getattr(lightgbm, estimator)(**model.best_params_). \
         fit(y=train_b['value'], X=train_b.drop(columns=key_cols))
     predict_array_a = split_model.predict(train_a.drop(columns=key_cols))

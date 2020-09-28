@@ -55,3 +55,9 @@ for k, feature in model_params.items():
     print(*predict_output['error'].items(), sep = '\n')
     elapsed_time = time.process_time() - startTime
     print('Time Elapsed: {}'.format(elapsed_time))
+
+
+predict_output['predictions']
+classes = list(siteDT['esa'].unique())
+
+list(cv_output['model'].classes_)
