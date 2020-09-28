@@ -70,7 +70,7 @@ def feature_predict(model, dat, train_dat, log_dep, estimator):
     return {'model': main_model, 'predictions': pred_dat, 'error': error}
 
 def tab_importance(model, **kwargs):
-    imp_dat = pd.DataFrame({'feature': model.feature_name_, 'importance': model.feature_importances_})
+    imp_dat = pd.DataFrame({'feature': model.booster_.feature_name(), 'importance': model.booster_.feature_importance('gain')})
     imp_dat['relative'] = np.round(100 * imp_dat['importance'] / np.sum(imp_dat['importance']))
     imp_dat = imp_dat.sort_values(by='relative', ascending=False).reset_index(drop=True)
     return imp_dat
