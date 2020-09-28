@@ -17,8 +17,8 @@ with open('input/model_params.json') as f:
 # Unlist selected parameters
 for k, v in model_params.items():
     params = v['params']
-    params['scoring'], params['verbose'], params['n_jobs'], params['cv'] = \
-        [params[x][0] for x in ['scoring', 'verbose', 'n_jobs', 'cv']]
+    params['scoring'], params['verbose'], params['n_jobs'], params['cv'], params['estimator'] = \
+        [params[x][0] for x in ['scoring', 'verbose', 'n_jobs', 'cv', 'estimator']]
     v['dep_var'] = v['dep_var'][0]
     v['log_dep'] = v['log_dep'][0]
 
@@ -52,7 +52,6 @@ for k, feature in model_params.items():
     params_dat = pd.DataFrame.from_dict({k: [v] for k, v in opt_params.items()}, orient='columns')
     params_dat.to_csv(export_paths[k]['params'].format('.csv'), index=False)
     print('Best Params: {}'.format(opt_params))
-    print('mape: {mape} aape: {aape}'.format(**predict_output['error']))
-
+    print(*predict_output['error'].items(), sep = '\n')
     elapsed_time = time.process_time() - startTime
     print('Time Elapsed: {}'.format(elapsed_time))

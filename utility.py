@@ -1,8 +1,9 @@
 import pandas as pd
-import lightgbm as lgb
+import lightgbm
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import train_test_split
 import numpy as np
+
 
 def feature_cv(dat, dep_var, log_dep, ivars, params, train_omit = [''], **kwargs):
     # Filter Data
@@ -14,22 +15,26 @@ def feature_cv(dat, dep_var, log_dep, ivars, params, train_omit = [''], **kwargs
     if (log_dep):
         train_dat['value'] = np.log1p(train_dat['value'])
     # Define grid search
-    params.update({'estimator': lgb.LGBMRegressor()})
+    estimator_str = params['estimator']
+    params['estimator'] = getattr(lightgbm, estimator_str)()
     gs = GridSearchCV(**params)
     mfit = gs.fit(y = train_dat['value'], X = train_dat.drop(columns = ['site', 'value']))
-    return {'model': mfit, 'dat': dat, 'train_dat': train_dat, 'log_dep': log_dep}
-
+    return {'model': mfit, 'dat': dat, 'train_dat': train_dat, 'log_dep': log_dep, 'estimator': estimator_str}
 
 def calc_perror(actual, prediction):
-    ape = 100 * np.abs(actual - prediction) / actual
-    aape = np.round(np.nanmean(ape), 2)
-    mape = np.round(np.nanmedian(ape), 2)
-    return {'aape': aape, 'mape': mape}
+    if(actual[0].__class__.__name__ == 'str'):
+        error = {'% Correct': np.round(100 * np.mean(actual == prediction), 1)}
+    else:
+        ape = 100 * np.abs(actual - prediction) / actual
+        aape = np.round(np.nanmean(ape), 2)
+        mape = np.round(np.nanmedian(ape), 2)
+        error = {'aape': aape, 'mape': mape}
+    return error
 
-def feature_predict(model, dat, train_dat, log_dep):
+def feature_predict(model, dat, train_dat, log_dep, estimator):
     key_cols = ['site', 'value']
     # Fit main model and predictions
-    main_model = lgb.LGBMRegressor(**model.best_params_).\
+    main_model = getattr(lightgbm, estimator)(**model.best_params_).\
         fit(y = train_dat['value'], X = train_dat.drop(columns = key_cols))
     predict_array = main_model.predict(dat.drop(columns=key_cols))
     pred_dat = pd.concat([
@@ -39,10 +44,11 @@ def feature_predict(model, dat, train_dat, log_dep):
     # Calc OOS predictions + error
     train_a, train_b = train_test_split(train_dat, test_size=0.5)
     train_a, train_b = [train_a.reset_index(), train_b.reset_index()]
-    split_model = lgb.LGBMRegressor(**model.best_params_). \
+    split_model = getattr(lightgbm, estimator)(**model.best_params_). \
         fit(y=train_a['value'], X=train_a.drop(columns=key_cols))
     predict_array_b = split_model.predict(train_b.drop(columns=key_cols))
-    split_model = lgb.LGBMRegressor(**model.best_params_). \
+    #split_model = lgb.LGBMRegressor(**model.best_params_). \
+    split_model = getattr(lightgbm, estimator)(**model.best_params_). \
         fit(y=train_b['value'], X=train_b.drop(columns=key_cols))
     predict_array_a = split_model.predict(train_a.drop(columns=key_cols))
 
