@@ -3,9 +3,10 @@ import lightgbm
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import train_test_split
 import numpy as np
+import boto3
 
 
-def feature_cv(dat, dep_var, log_dep, ivars, params, train_omit = [''], **kwargs):
+def feature_cv(dat, dep_var, ivars, params, train_omit = [''], log_dep=False, **kwargs):
     # Filter Data
     dat = dat[['id', dep_var] + ivars]
     dat.rename(columns={dep_var: 'value'}, inplace=True)
@@ -31,7 +32,7 @@ def calc_perror(actual, prediction):
         error = {'aape': aape, 'mape': mape}
     return error
 
-def feature_predict(model, dat, train_dat, log_dep, estimator):
+def feature_predict(model, dat, train_dat, estimator, log_dep=False):
     key_cols = ['id', 'value']
     # Fit main model and predictions
     main_model = getattr(lightgbm, estimator)(**model.best_params_).\
@@ -74,3 +75,18 @@ def tab_importance(model, **kwargs):
     imp_dat['relative'] = np.round(100 * imp_dat['importance'] / np.sum(imp_dat['importance']))
     imp_dat = imp_dat.sort_values(by='relative', ascending=False).reset_index(drop=True)
     return imp_dat
+
+def log_model(meta, error, predictions, paths):
+    try:
+        meta['project'], meta['alias'] = meta['project'][0], meta['alias'][0]
+        fname = '{project}_{dep_var}_{estimator}_{alias}'.format(**meta)
+        s3 = boto3.client('s3')
+        s3.upload_file(paths['models'].format('.txt'),  'predict-logs', 'models/' + fname)
+        s3.upload_file(paths['predictions'].format('.csv'),  'predict-logs', 'predictions/' + fname)
+        s3.upload_file(paths['importance'].format('.csv'),  'predict-logs', 'importance/' + fname)
+        s3.upload_file(paths['error'].format('.csv'),  'predict-logs', 'error/' + fname)
+        print('Successful model log')
+    except:
+        print('Failed model log')
+
+
