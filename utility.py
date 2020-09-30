@@ -7,10 +7,10 @@ import numpy as np
 
 def feature_cv(dat, dep_var, log_dep, ivars, params, train_omit = [''], **kwargs):
     # Filter Data
-    dat = dat[['site', dep_var] + ivars]
+    dat = dat[['id', dep_var] + ivars]
     dat.rename(columns={dep_var: 'value'}, inplace=True)
     train_dat = dat[dat['value'].notna()]
-    train_dat = train_dat[~train_dat['site'].isin(train_omit)]
+    train_dat = train_dat[~train_dat['id'].isin(train_omit)]
     train_dat.reset_index(inplace = True, drop = True)
     if (log_dep):
         train_dat['value'] = np.log1p(train_dat['value'])
@@ -18,7 +18,7 @@ def feature_cv(dat, dep_var, log_dep, ivars, params, train_omit = [''], **kwargs
     estimator_str = params['estimator']
     params['estimator'] = getattr(lightgbm, estimator_str)()
     gs = GridSearchCV(**params)
-    mfit = gs.fit(y = train_dat['value'], X = train_dat.drop(columns = ['site', 'value']))
+    mfit = gs.fit(y = train_dat['value'], X = train_dat.drop(columns = ['id', 'value']))
     return {'model': mfit, 'dat': dat, 'train_dat': train_dat, 'log_dep': log_dep, 'estimator': estimator_str}
 
 def calc_perror(actual, prediction):
@@ -32,7 +32,7 @@ def calc_perror(actual, prediction):
     return error
 
 def feature_predict(model, dat, train_dat, log_dep, estimator):
-    key_cols = ['site', 'value']
+    key_cols = ['id', 'value']
     # Fit main model and predictions
     main_model = getattr(lightgbm, estimator)(**model.best_params_).\
         fit(y = train_dat['value'], X = train_dat.drop(columns = key_cols))
@@ -56,12 +56,12 @@ def feature_predict(model, dat, train_dat, log_dep, estimator):
         fit(y=train_b['value'], X=train_b.drop(columns=key_cols))
     predict_array_a = split_model.predict(train_a.drop(columns=key_cols))
 
-    train_a = pd.concat([train_a[['site']], pd.DataFrame(predict_array_a, columns=['oos'])], axis=1)
-    train_b = pd.concat([train_b[['site']], pd.DataFrame(predict_array_b, columns=['oos'])], axis=1)
+    train_a = pd.concat([train_a[['id']], pd.DataFrame(predict_array_a, columns=['oos'])], axis=1)
+    train_b = pd.concat([train_b[['id']], pd.DataFrame(predict_array_b, columns=['oos'])], axis=1)
 
     pred_dat = pred_dat.merge(
         pd.concat([train_a, train_b], axis=0),
-        on='site',
+        on='id',
         how='outer')
     if(log_dep):
         pred_dat[['ws', 'oos']] = pred_dat[['ws', 'oos']].apply(lambda x: np.expm1(x))

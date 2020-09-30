@@ -8,9 +8,12 @@ import os
 import time
 from datetime import timedelta
 
+# TODO: have boto sync lightgbm input folder at start
+# TODO: have boto upload model results to s3 automatically
+
 # Import Data
 #============================================
-siteDT = pd.read_csv('input/predict_input.csv')
+input_dat = pd.read_csv('input/predict_input.csv')
 with open('input/model_params.json') as f:
     model_params = json.load(f)
 
@@ -40,7 +43,7 @@ print('Starting estimation...')
 
 startTime = time.process_time()
 for k, feature in model_params.items():
-    feature.update({'dat': siteDT})
+    feature.update({'dat': input_dat})
     print('Estimating {} model'.format(k))
     cv_output = utility.feature_cv(**feature)
     predict_output = utility.feature_predict(**cv_output)
