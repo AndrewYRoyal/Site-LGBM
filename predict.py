@@ -7,14 +7,38 @@ import utility
 import os
 import time
 from datetime import timedelta
+import argparse
+import boto3
+import subprocess
 
-# TODO: have boto sync lightgbm input folder at start
+# parser = argparse.ArgumentParser('Run LightGBM model and predictions')
+# parser.add_argument(
+#     'file',
+#     metavar = 'f',
+#     type = str,
+#     help = 'Filepath to ID .csv file.',
+#     default = 'id_list.csv')
+# args = parser.parse_args()
+# id_dat = pd.read_csv(args.file)
+
+print('Importing data and parameters')
+data_path = 'input/predict_input.csv'
+param_path = 'input/model_params.json'
+
+try:
+    s3 = boto3.client('s3')
+    s3.download_file('lightgbm-input', 'predict_input.csv', data_path)
+    s3.download_file('lightgbm-input', 'model_params.json', param_path)
+except:
+    sys.exit('Error: Input data not found.')
+
 # TODO: have boto upload model results to s3 automatically
+# TODO: provide export options (log option to put on permanent log)
 
 # Import Data
 #============================================
-input_dat = pd.read_csv('input/predict_input.csv')
-with open('input/model_params.json') as f:
+input_dat = pd.read_csv(data_path)
+with open(param_path) as f:
     model_params = json.load(f)
 
 # Unlist selected parameters
@@ -58,3 +82,9 @@ for k, feature in model_params.items():
     print(*predict_output['error'].items(), sep = '\n')
     elapsed_time = time.process_time() - startTime
     print('Time Elapsed: {}'.format(elapsed_time))
+
+try:
+    subprocess.run(['./export_results.sh'])
+    print('Results synced to s3.')
+except:
+    print('Unable to sync results to s3 bucket.')
