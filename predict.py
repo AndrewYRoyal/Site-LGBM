@@ -91,7 +91,7 @@ for k, feature in model_params.items():
             meta = feature['meta'],
             error = predict_output['error'],
             predictions = predict_output['predictions'],
-            paths = export_paths['k'])
+            paths = export_paths[k])
     elapsed_time = time.process_time() - startTime
     print('Time Elapsed: {}'.format(elapsed_time))
 
