@@ -20,6 +20,9 @@ print('Importing data and parameters')
 data_path = 'input/predict_input.csv'
 param_path = 'input/model_params.json'
 
+if(not os.path.exists('input')):
+    os.mkdir('input')
+
 try:
     s3 = boto3.client('s3')
     s3.download_file('lightgbm-input', 'predict_input.csv', data_path)
