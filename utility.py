@@ -81,10 +81,10 @@ def log_model(meta, error, predictions, paths):
         meta['project'], meta['alias'] = meta['project'][0], meta['alias'][0]
         fname = '{project}_{dep_var}_{estimator}_{alias}'.format(**meta)
         s3 = boto3.client('s3')
-        s3.upload_file(paths['models'].format('.txt'),  'predict-logs', 'models/' + fname)
-        s3.upload_file(paths['predictions'].format('.csv'),  'predict-logs', 'predictions/' + fname)
-        s3.upload_file(paths['importance'].format('.csv'),  'predict-logs', 'importance/' + fname)
-        s3.upload_file(paths['error'].format('.csv'),  'predict-logs', 'error/' + fname)
+        s3.upload_file(paths['models'].format('.txt'),  'predict-logs', 'models/' + fname + '.txt')
+        s3.upload_file(paths['predictions'].format('.csv'),  'predict-logs', 'predictions/' + fname + '.csv')
+        s3.upload_file(paths['importance'].format('.csv'),  'predict-logs', 'importance/' + fname + '.csv')
+        s3.upload_file(paths['error'].format('.csv'),  'predict-logs', 'error/' + fname + '.csv')
         print('Successful model log')
     except:
         print('Failed model log')
