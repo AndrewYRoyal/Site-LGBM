@@ -13,23 +13,31 @@ import subprocess
 
 parser = argparse.ArgumentParser('Run LightGBM model and predictions')
 parser.add_argument('--log', dest='log', default=False, action='store_true')
+parser.add_argument('--data', dest='data_path', default='', action='store')
+parser.add_argument('--params', dest='param_path', default='', action='store')
 args = parser.parse_args()
 
-
 print('Importing data and parameters')
-data_path = 'input/predict_input.csv'
-param_path = 'input/model_params.json'
 
 if(not os.path.exists('input')):
     os.mkdir('input')
 
-try:
-    s3 = boto3.client('s3')
-    s3.download_file('lightgbm-input', 'predict_input.csv', data_path)
-    s3.download_file('lightgbm-input', 'model_params.json', param_path)
-    print('Input data imported successfully.')
-except:
-    sys.exit('Error: Input data not found.')
+if(args.data_path == ''):
+    print('No data supplied. Importing from s3.')
+    data_path = 'input/predict_input.csv'
+    param_path = 'input/model_params.json'
+    s3_sync = True
+    try:
+        s3 = boto3.client('s3')
+        s3.download_file('lightgbm-input', 'predict_input.csv', data_path)
+        s3.download_file('lightgbm-input', 'model_params.json', param_path)
+        print('Input data imported successfully.')
+    except:
+        sys.exit('Error: Input data not found.')
+else:
+    data_path = args.data_path
+    param_path = args.param_path
+    s3_sync = False
 
 # Import and format data and parameters
 #============================================
@@ -97,8 +105,9 @@ for k, feature in model_params.items():
 
 # Sync to s3
 #============================================
-try:
-    subprocess.run(['./export_results.sh'])
-    print('Results synced to s3.')
-except:
-    print('Unable to sync results to s3 bucket.')
+if s3_sync:
+    try:
+        subprocess.run(['./export_results.sh'])
+        print('Results synced to s3.')
+    except:
+        print('Unable to sync results to s3 bucket.')
