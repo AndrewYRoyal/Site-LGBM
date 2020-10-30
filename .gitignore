@@ -4,6 +4,7 @@ inst/doc
 .Rhistory
 .Ruserdata
 .Rprofile
+.idea
 __pycache__
 input
 output
